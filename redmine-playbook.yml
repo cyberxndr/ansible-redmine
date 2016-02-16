@@ -1,0 +1,39 @@
+---
+- hosts: testRedmine
+  remote_user: root
+  vars:
+    dbname: redmine
+    dbuser: redmine
+    dbpassword: redmine
+    redmine_lang: ru
+
+  tasks:
+
+    - name: update apt cache
+      apt: update_cache=yes
+
+    - name: install admin utils
+      apt: name={{item}}
+      with_items:
+        - htop
+
+    - include: tasks/nginx.yml
+
+    - include: tasks/postgresql.yml
+
+    - name: ensure ruby is installed
+      apt: name={{item}}
+      with_items:
+        - ruby
+        - ruby-dev
+
+    - name: ensure redmine dependencies is installed
+      apt: name={{item}}
+      with_items:
+        - git
+        - make
+        - g++
+        - libmagickwand-dev
+        - imagemagick
+
+    - include: tasks/redmine.yml

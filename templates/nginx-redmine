@@ -1,0 +1,31 @@
+upstream redmine_thin_servers {
+  server unix:/var/www/redmine/thin.0.sock;
+}
+
+server {
+
+  listen   80; ## listen for ipv4
+  listen   [::]:80 default ipv6only=on; ## listen for ipv6
+
+  server_name localhost;
+  server_name_in_redirect off;
+
+  proxy_set_header        Host $http_host;
+  proxy_set_header        X-Real-IP $remote_addr;
+  proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header        X-Forwarded-Proto $scheme;
+  proxy_redirect off;
+
+  location / {
+    root   /var/www/redmine/public;
+
+    error_page 404  404.html;
+    error_page 500 502 503 504  500.html;
+
+    try_files $uri/index.html $uri.html $uri @redmine_thin_servers;
+  }
+
+  location @redmine_thin_servers {
+    proxy_pass http://redmine_thin_servers;
+  }
+}

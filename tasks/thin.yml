@@ -1,0 +1,17 @@
+---
+- name: ensure that thin config directory exists
+  file:
+    path: /etc/thin
+    state: directory
+
+- name: copying thin config
+  template: src=../templates/thin-redmine.yml dest=/etc/thin/redmine.yml
+
+- name: creating thin init.d file
+  shell: /var/lib/gems/*/gems/thin*/bin/thin install
+
+- name: enabling thin autostart
+  shell: update-rc.d thin defaults
+
+- name: starting thin
+  service: name=thin state=started

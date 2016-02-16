@@ -1,0 +1,51 @@
+---
+- name: clone redmine 3.2 repo
+  git: repo=https://github.com/redmine/redmine.git dest=/var/www/redmine version=3.2.0 force=yes
+
+- name: setting database.yml config
+  template: src=../templates/database.yml dest=/var/www/redmine/config/database.yml
+
+- name: ensure bundler is installed
+  command: gem install bundler creates=/usr/bin/bundle
+
+- name: adding thin to redmine dependencies
+  lineinfile: 
+    dest: /var/www/redmine/Gemfile
+    line: "gem 'thin'"
+
+- name: install dependencies for redmine
+  command: bundle install --without development test chdir=/var/www/redmine
+
+- name: generate secret token
+  command: rake generate_secret_token chdir=/var/www/redmine
+
+- name: create database structure
+  shell: rake db:migrate chdir=/var/www/redmine
+  environment:
+    RAILS_ENV: "production"
+
+- name: load initial database data
+  shell: rake redmine:load_default_data chdir=/var/www/redmine
+  environment:
+    RAILS_ENV: "production"
+    REDMINE_LANG: "{{ redmine_lang }}"
+
+- name: setting nginx config
+  template: src=../templates/nginx-redmine dest=/etc/nginx/sites-available/redmine
+
+- name: allowing redmine site
+  file:
+    src: /etc/nginx/sites-available/redmine
+    dest: /etc/nginx/sites-enabled/redmine
+    state: link
+
+- name: setting redmine permissions
+  file:
+    path: /var/www/redmine
+    owner: www-data
+    recurse: yes
+
+- include: thin.yml
+
+- name: restarting nginx
+  service: name=nginx state=restarted

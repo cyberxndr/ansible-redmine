@@ -1,0 +1,23 @@
+---
+- name: ensure postgres is installed
+  apt: name={{item}}
+  with_items:
+    - postgresql
+    - python-psycopg2
+    - libpq5
+    - libpq-dev
+
+- name: ensure database is created
+  postgresql_db: name={{dbname}}
+  become: true
+  become_user: postgres
+
+- name: ensure user has access to database
+  postgresql_user: db={{dbname}} name={{dbuser}} password={{dbpassword}} priv=ALL
+  become: true
+  become_user: postgres
+
+- name: ensure user does not have unnecessary privilege
+  postgresql_user: name={{dbuser}} role_attr_flags=NOSUPERUSER,NOCREATEDB
+  become: true
+  become_user: postgres

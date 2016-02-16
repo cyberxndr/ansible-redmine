@@ -1,0 +1,6 @@
+production:
+ adapter: postgresql
+ host: localhost
+ database: {{ dbname }}
+ username: {{ dbuser }}
+ password: {{ dbpassword }}
